@@ -3,6 +3,12 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev:examples": "bun run -F ./examples/* dev",
+    "build:examples": "bun run -F ./examples/* build",
+    "start:examples": "bun run -F ./examples/* start"
+  },
+  "workspaces": ["examples/*"],
   "devDependencies": {
     "@types/bun": "latest"
   },
