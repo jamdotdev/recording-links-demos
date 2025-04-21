@@ -47,7 +47,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
           type="importmap"
           dangerouslySetInnerHTML={{
             __html: `
-              { "imports": { "@jam/recorder": "https://recorder.jam.dev/js/recorder" } }
+              { "imports": { "@jam/recorder": "https://static.jam.test:8888/recorder.js" } }
             `.trim(),
           }}
         ></script>
