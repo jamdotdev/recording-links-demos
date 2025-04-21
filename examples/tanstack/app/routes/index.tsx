@@ -64,6 +64,33 @@ function Home() {
           Reset
         </button>
       </li>
+      <li>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = e.currentTarget as HTMLFormElement;
+            const formData = new FormData(form);
+            const recordingId = formData.get("recording-id") as string;
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete("jamRecordingId");
+            url.searchParams.set("jamRecordingId", recordingId);
+
+            window.history.replaceState({}, "", url.toString());
+            window.location.reload();
+          }}
+        >
+          <label>
+            Recording ID:
+            <input
+              name="recording-id"
+              type="text"
+              placeholder="Create me at Jam.dev"
+            />
+          </label>
+          <button type="submit">Open</button>
+        </form>
+      </li>
     </ul>
   );
 }
