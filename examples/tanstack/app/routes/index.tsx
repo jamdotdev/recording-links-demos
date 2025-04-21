@@ -23,6 +23,11 @@ const updateCount = createServerFn({ method: "POST" })
     await fs.promises.writeFile(filePath, `${count + data}`);
   });
 
+// n.b. we can't create a `DELETE` server fn
+const resetCount = createServerFn({ method: "POST" }).handler(async () => {
+  await fs.promises.writeFile(filePath, "0");
+});
+
 export const Route = createFileRoute("/")({
   component: Home,
   loader: async () => await getCount(),
@@ -31,17 +36,34 @@ export const Route = createFileRoute("/")({
 function Home() {
   const router = useRouter();
   const state = Route.useLoaderData();
+  console.log("render w/ count:", state);
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        updateCount({ data: 1 }).then(() => {
-          router.invalidate();
-        });
-      }}
-    >
-      Add 1 to {state}?
-    </button>
+    <ul>
+      <li>
+        <button
+          type="button"
+          onClick={() => {
+            updateCount({ data: 1 }).then(() => {
+              router.invalidate();
+            });
+          }}
+        >
+          Add 1 to {state}?
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          onClick={() => {
+            resetCount().then(() => {
+              router.invalidate();
+            });
+          }}
+        >
+          Reset
+        </button>
+      </li>
+    </ul>
   );
 }
