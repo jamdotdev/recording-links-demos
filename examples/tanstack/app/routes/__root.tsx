@@ -55,13 +55,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
           type="module"
           dangerouslySetInnerHTML={{
             __html: `
-              const params = new URLSearchParams(window.location.search);
-              const recordingId = params.get("jamRecordingId");
-
-              if (recordingId) {
-                const { Recorder } = await import("@jam/recorder");
-                Recorder.open(recordingId);
-              }
+              const { JamRecorder } = await import("@jam/recorder");
+              JamRecorder.initialize("87cdf305-4dfc-4070-a2a8-fd3a7b582097")
             `
               .trim()
               .replace(/^              /gm, ""),

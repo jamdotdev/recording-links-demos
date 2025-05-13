@@ -73,8 +73,8 @@ function Home() {
             const recordingId = formData.get("recording-id") as string;
 
             const url = new URL(window.location.href);
-            url.searchParams.delete("jamRecordingId");
-            url.searchParams.set("jamRecordingId", recordingId);
+            url.searchParams.delete("jam-recording");
+            url.searchParams.set("jam-recording", recordingId);
 
             window.history.replaceState({}, "", url.toString());
             window.location.reload();
