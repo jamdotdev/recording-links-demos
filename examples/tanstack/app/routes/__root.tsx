@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import {
   Outlet,
   createRootRoute,
@@ -33,36 +33,24 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  React.useEffect(() => {
+    let counter = 0;
+    const intervalId = setInterval(
+      () => console.log("im a log", counter++),
+      Math.random() * 5000 + 15000 // every 15-20 seconds
+    );
+
+    return () => clearInterval(intervalId);
+  }, []);
   return (
     <html>
       <head>
-        {process.env.JAM_TEAM_ID ? (
-          process.env.JAM_TEAM_ID.split(",").map((id) => (
-            <meta name="jam:team" content={id} key={id} />
-          ))
-        ) : (
-          <meta name="jam:team" content="invalid" />
-        )}
-        <script
-          type="importmap"
-          dangerouslySetInnerHTML={{
-            __html: `
-              { "imports": { "@jam/recorder": "https://static.jam.test:8888/recorder.js" } }
-            `.trim(),
-          }}
-        ></script>
-        <script
-          type="module"
-          dangerouslySetInnerHTML={{
-            __html: `
-              const { JamRecorder } = await import("@jam/recorder");
-              JamRecorder.initialize("87cdf305-4dfc-4070-a2a8-fd3a7b582097")
-            `
-              .trim()
-              .replace(/^              /gm, ""),
-          }}
-        ></script>
+        <script type="module" src="https://js.jam.test:8888/capture.js" />
+        <script type="module" src="https://js.jam.test:8888/recorder.js" />
+
         <HeadContent />
+        <meta name="jam:team" content="f5f89d61-4a4c-4d85-afe1-e5acafd558b5" />
+        <meta name="jam:team" content="87cdf305-4dfc-4070-a2a8-fd3a7b582097" />
       </head>
       <body>
         {children}
