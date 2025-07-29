@@ -45,8 +45,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html>
       <head>
-        <script type="module" src="https://js.jam.test:8888/capture.js" />
-        <script type="module" src="https://js.jam.test:8888/recorder.js" />
+        <script type="module" src="https://js.jam.dev/capture.js" />
+        <script type="module" src="https://js.jam.dev/recorder.js" />
 
         <HeadContent />
         <meta name="jam:team" content="f5f89d61-4a4c-4d85-afe1-e5acafd558b5" />

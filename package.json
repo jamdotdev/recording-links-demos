@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev:examples": "bun run -F ./examples/* dev",
-    "build:examples": "bun run -F ./examples/* build",
-    "start:examples": "bun run -F ./examples/* start"
+    "dev": "bun run -F example:* dev",
+    "build": "bun run -F example:* build",
+    "start": "bun run -F example:* start"
   },
   "workspaces": ["examples/*"],
   "devDependencies": {

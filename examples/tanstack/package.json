@@ -1,5 +1,5 @@
 {
-  "name": "example-tanstack",
+  "name": "example:tanstack",
   "module": "index.ts",
   "type": "module",
   "private": true,
