@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jam Recording Links - Conditional Inclusion</title>
+    <link rel="stylesheet" href="/src/style.css" />
+
+    <meta name="jam:team" content="f5f89d61-4a4c-4d85-afe1-e5acafd558b5" />
+    <meta name="jam:team" content="87cdf305-4dfc-4070-a2a8-fd3a7b582097" />
+  </head>
+  <body>
+    <ul>
+      <li data-script-block="recorder">
+        <strong>Is recorder.js loaded?</strong>
+        <span data-script-loaded="no">No</span>
+      </li>
+      <li data-script-block="capture">
+        <strong>Is capture.js loaded?</strong>
+        <span data-script-loaded="no">No</span>
+      </li>
+    </ul>
+    <div>
+      <button type="button" data-script-loader="recorder">
+        Load recorder.js
+      </button>
+    </div>
+    <form class="hidden">
+      <label>
+        <strong>Recording ID:</strong>
+        <input name="recordingId" placeholder="verify" />
+      </label>
+      <button type="submit">Open recorder</button>
+    </form>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
