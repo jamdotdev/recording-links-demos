@@ -1,12 +1,13 @@
 import * as fs from "node:fs";
+import * as path from "node:path";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
-const filePath = "count.txt";
+const countFilePath = "count.txt";
 
 async function readCount() {
   return parseInt(
-    await fs.promises.readFile(filePath, "utf-8").catch(() => "0")
+    await fs.promises.readFile(countFilePath, "utf-8").catch(() => "0")
   );
 }
 
@@ -16,16 +17,36 @@ const getCount = createServerFn({
   return readCount();
 });
 
+// Used to post a file input to the server
+const postFile = createServerFn({
+  method: "POST",
+})
+  .validator((data: FormData) => {
+    const file = data.get("file");
+    if (!(file instanceof File)) {
+      throw new Error("Expected a file input");
+    }
+    return file;
+  })
+  .handler(async ({ data }) => {
+    const file = data;
+    const content = await file.text();
+    const filePath = path.join(import.meta.dirname, "..", "..", "tmp", file.name);
+
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.promises.writeFile(filePath, content);
+  });
+
 const updateCount = createServerFn({ method: "POST" })
   .validator((d: number) => d)
   .handler(async ({ data }) => {
     const count = await readCount();
-    await fs.promises.writeFile(filePath, `${count + data}`);
+    await fs.promises.writeFile(countFilePath, `${count + data}`);
   });
 
 // n.b. we can't create a `DELETE` server fn
 const resetCount = createServerFn({ method: "POST" }).handler(async () => {
-  await fs.promises.writeFile(filePath, "0");
+  await fs.promises.writeFile(countFilePath, "0");
 });
 
 export const Route = createFileRoute("/")({
@@ -66,29 +87,16 @@ function Home() {
       </li>
       <li>
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.currentTarget as HTMLFormElement;
-            const formData = new FormData(form);
-            const recordingId = formData.get("recording-id") as string;
-
-            const url = new URL(window.location.href);
-            url.searchParams.delete("jam-recording");
-            url.searchParams.set("jam-recording", recordingId);
-
-            window.history.replaceState({}, "", url.toString());
-            window.location.reload();
+          onSubmit={async (event) => {
+            event.preventDefault();
+            await postFile({ data: new FormData(event.currentTarget) });
           }}
         >
           <label>
-            Recording ID:
-            <input
-              name="recording-id"
-              type="text"
-              placeholder="Create me at Jam.dev"
-            />
+            Upload a file:
+            <input type="file" name="file" />
           </label>
-          <button type="submit">Open</button>
+          <button type="submit">Upload</button>
         </form>
       </li>
     </ul>
