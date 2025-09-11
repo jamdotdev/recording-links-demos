@@ -32,7 +32,7 @@
       "name": "example:conditional-inclusion",
       "version": "0.0.0",
       "dependencies": {
-        "@jam.dev/recording-links": "0.1.0",
+        "@jam.dev/recording-links": "0.1.3",
       },
       "devDependencies": {
         "typescript": "~5.8.3",
@@ -389,7 +389,7 @@
 
     "@istanbuljs/schema": ["@istanbuljs/schema@0.1.3", "", {}, "sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA=="],
 
-    "@jam.dev/recording-links": ["@jam.dev/recording-links@0.1.0", "", {}, "sha512-gnom3qaie9QgGF+Ivmjj4ATbvMAwQlbQG2i3IT/o1J0Bb2QO5u0Rj36jJ1S9xNofi3JAFLFyenY0T4s82aDG1Q=="],
+    "@jam.dev/recording-links": ["@jam.dev/recording-links@0.1.3", "", {}, "sha512-WozIIH2jTucDqppTdHi5qXwKLIrAXHXQtomvgO9zhSGn6RNeCgILgPBCnAVHqt4abHmXSesyTMsfCToVtu0e1A=="],
 
     "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.12", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-OuLGC46TjB5BbN1dH8JULVVZY4WTdkF7tV9Ys6wLL1rubZnCMstOhNHueU5bLCrnRuDhKPDM4g6sw4Bel5Gzqg=="],
 

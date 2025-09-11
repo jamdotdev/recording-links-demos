@@ -1,15 +1,15 @@
 {
   "name": "recording-links-demo",
   "module": "index.ts",
-  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
   "private": true,
   "scripts": {
     "dev": "bun run -F example:* dev",
     "build": "bun run -F example:* build",
     "start": "bun run -F example:* start"
   },
-  "workspaces": ["examples/*"],
-  "devDependencies": {
-    "@types/bun": "latest"
-  }
+  "type": "module",
+  "workspaces": ["examples/*"]
 }
