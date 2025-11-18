@@ -279,45 +279,72 @@ app.whenReady().then(() => {
   });
 
   // Set up screen capture source selection
-  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-    desktopCapturer
-      .getSources({ types: ["screen", "window"] })
-      .then((sources) => {
-        console.log("Available sources:", sources.map((s) => s.name));
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (request, callback) => {
+      desktopCapturer
+        .getSources({ types: ["screen", "window"] })
+        .then((sources) => {
+          console.log(
+            "Available sources:",
+            sources.map((s) => ({ id: s.id, name: s.name })),
+          );
 
-        // Filter out the recorder window to prevent recursive capture
-        const validSources = sources.filter((source) => {
-          // Exclude windows with "Jam" or recorder-related names
-          const isRecorderWindow =
-            source.name.includes("Recorder") ||
-            source.name.includes("DevTools");
-          return !isRecorderWindow;
-        });
+          // Get recorder window title for filtering
+          const recorderTitle = recorderWindow?.getTitle();
+          console.log("Recorder window title:", recorderTitle);
 
-        console.log("Valid sources:", validSources.map((s) => s.name));
+          // Filter out the recorder window and DevTools to prevent recursive capture
+          const validSources = sources.filter((source) => {
+            // Filter out DevTools windows
+            if (source.name.includes("DevTools")) {
+              return false;
+            }
 
-        // Selection strategy (preference to app windows):
-        // 1. First app window (type === 'window', excluding recorder)
-        // 2. First screen
-        // 3. Any first valid source
+            // Filter out the recorder window by title
+            if (recorderTitle && source.name === recorderTitle) {
+              console.log(
+                "Filtering out recorder window:",
+                source.name,
+                source.id,
+              );
+              return false;
+            }
 
-        const appWindow = validSources.find((s) => s.id.startsWith("window:"));
-        const screen = validSources.find((s) => s.id.startsWith("screen:"));
-        const selectedSource = appWindow || screen || validSources[0];
+            return true;
+          });
 
-        if (selectedSource) {
-          console.log("Selected source:", selectedSource.name);
-          callback({ video: selectedSource, audio: "loopback" });
-        } else {
-          console.error("No valid sources available for capture");
+          console.log(
+            "Valid sources after filtering:",
+            validSources.map((s) => ({ id: s.id, name: s.name })),
+          );
+
+          // Selection strategy (preference to app windows):
+          // 1. First app window (type === 'window', excluding recorder)
+          // 2. First screen
+          // 3. Any first valid source
+
+          const appWindow = validSources.find((s) =>
+            s.id.startsWith("window:"),
+          );
+          const screen = validSources.find((s) => s.id.startsWith("screen:"));
+          const selectedSource = appWindow || screen || validSources[0];
+
+          if (selectedSource) {
+            console.log("Selected source:", selectedSource.name);
+            callback({ video: selectedSource, audio: "loopback" });
+          } else {
+            console.error("No valid sources available for capture");
+            callback({});
+          }
+        })
+        .catch((error) => {
+          console.error("Error getting desktop sources:", error);
           callback({});
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting desktop sources:", error);
-        callback({});
-      });
-  });
+        });
+    },
+    // TODO - turn this on/off to use (disable) the mac system picker
+    { useSystemPicker: true },
+  );
 
   setupProtocol();
   setupMenu();
