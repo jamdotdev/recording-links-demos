@@ -6,9 +6,9 @@
   },
   "private": true,
   "scripts": {
-    "dev": "bun run -F example:* dev",
-    "build": "bun run -F example:* build",
-    "start": "bun run -F example:* start"
+    "dev": "bun run -F example-* dev",
+    "build": "bun run -F example-* build",
+    "start": "bun run -F example-* start"
   },
   "type": "module",
   "workspaces": ["examples/*"]

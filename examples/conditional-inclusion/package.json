@@ -1,5 +1,5 @@
 {
-  "name": "example:conditional-inclusion",
+  "name": "example-conditional-inclusion",
   "version": "0.0.0",
   "devDependencies": {
     "typescript": "~5.8.3",
