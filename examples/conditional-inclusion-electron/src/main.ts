@@ -29,7 +29,6 @@ function createWindow() {
   if (isDev) {
     // In development, load from the conditional-inclusion dev server
     mainWindow.loadURL("http://localhost:5173");
-    mainWindow.webContents.openDevTools();
   } else {
     // In production, load from the built web app
     const webDistPath = path.join(__dirname, "..", "web-dist", "index.html");
@@ -74,7 +73,6 @@ function createRecorderWindow(url: string) {
 
   // Load the URL with jam parameters
   recorderWindow.loadURL(url);
-  recorderWindow.webContents.openDevTools();
 
   recorderWindow.on("closed", () => {
     recorderWindow = null;
