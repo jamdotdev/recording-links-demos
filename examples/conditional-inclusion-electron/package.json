@@ -1,5 +1,5 @@
 {
-  "name": "example:electron",
+  "name": "conditional-inclusion-electron",
   "version": "0.1.0",
   "description": "Electron wrapper for conditional-inclusion demo",
   "main": "dist/main.js",
@@ -8,14 +8,14 @@
     "dev": "vite",
     "start": "open \"release/mac-arm64/Jam Conditional Inclusion Demo.app\"",
     "prebuild": "bun run build:web && bun run copy:web",
-    "build": "bun run prebuild && bun run build:electron && bash scripts/build-electron.sh --dir",
+    "build": "bun run prebuild && bun run build:electron && electron-builder --dir",
     "build:web": "cd ../conditional-inclusion && bun run build",
     "build:electron": "tsc && vite build --config vite.electron.config.ts",
     "copy:web": "rm -rf web-dist && cp -r ../conditional-inclusion/dist web-dist",
     "package": "bun run prebuild && bun run build:electron && bun run build",
-    "package:mac": "bun run prebuild && bun run build:electron && bash scripts/build-electron.sh --mac",
-    "package:win": "bun run prebuild && bun run build:electron && bash scripts/build-electron.sh --win",
-    "package:linux": "bun run prebuild && bun run build:electron && bash scripts/build-electron.sh --linux"
+    "package:mac": "bun run prebuild && bun run build:electron && electron-builder --mac",
+    "package:win": "bun run prebuild && bun run build:electron && electron-builder --win",
+    "package:linux": "bun run prebuild && bun run build:electron && electron-builder --linux"
   },
   "dependencies": {
     "electron-is-dev": "^3.0.1"
