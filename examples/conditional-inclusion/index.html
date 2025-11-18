@@ -35,6 +35,57 @@
       </label>
       <button type="submit">Open recorder</button>
     </form>
+    <script>
+      // Auto-forward detection for Electron app
+      (function() {
+        // Check if we're already in Electron (via the preload script API)
+        if (window.electronAPI && window.electronAPI.isElectron) {
+          console.log('Already running in Electron app');
+          return;
+        }
+
+        // Try to detect and launch the Electron app
+        const protocolUrl = 'jam-electron-demo://open' + window.location.search + window.location.hash;
+
+        console.log('Attempting to forward to Electron app:', protocolUrl);
+
+        // Method 1: Try to navigate to the protocol URL
+        const attemptLaunch = () => {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = protocolUrl;
+          document.body.appendChild(iframe);
+
+          // Clean up the iframe after a short delay
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 2000);
+        };
+
+        // Method 2: Also try window.location for better compatibility
+        const attemptDirectLaunch = () => {
+          const beforeUnload = Date.now();
+          window.location.href = protocolUrl;
+
+          // If we're still here after a short time, the app probably isn't installed
+          setTimeout(() => {
+            const timeElapsed = Date.now() - beforeUnload;
+            if (timeElapsed < 1500) {
+              console.log('Electron app not detected, staying on web page');
+              // Reset the URL if it was changed
+              if (window.location.protocol === 'jam-electron-demo:') {
+                window.history.replaceState({}, '', window.location.pathname);
+              }
+            } else {
+              console.log('Electron app may have launched');
+            }
+          }, 1000);
+        };
+
+        // Use iframe method as it's less disruptive
+        attemptLaunch();
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
