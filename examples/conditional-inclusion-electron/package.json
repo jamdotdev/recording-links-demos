@@ -6,19 +6,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder --dir",
+    "prebuild": "bun run build:web && bun run copy:web",
+    "build": "tsc && electron-builder --dir",
     "build:web": "cd ../conditional-inclusion && bun run build",
-    "package": "bun run build:web && bun run build && electron-builder",
-    "package:mac": "bun run build:web && bun run build && electron-builder --mac",
-    "package:win": "bun run build:web && bun run build && electron-builder --win",
-    "package:linux": "bun run build:web && bun run build && electron-builder --linux"
+    "build:electron": "tsc && vite build --config vite.electron.config.ts",
+    "copy:web": "rm -rf web-dist && cp -r ../conditional-inclusion/dist web-dist",
+    "package": "bun run prebuild && bun run build:electron && bun run build",
+    "package:mac": "bun run prebuild && bun run build:electron && electron-builder --mac",
+    "package:win": "bun run prebuild && bun run build:electron && electron-builder --win",
+    "package:linux": "bun run prebuild && bun run build:electron && electron-builder --linux"
   },
   "dependencies": {
     "electron-is-dev": "^3.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "electron": "^33.2.1",
+    "electron": "33.4.11",
     "electron-builder": "^25.1.8",
     "typescript": "^5.8.3",
     "vite": "^7.0.5",
