@@ -1,4 +1,4 @@
-import { app, BrowserWindow, protocol } from "electron";
+import { app, BrowserWindow, protocol, session } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import isDev from "electron-is-dev";
@@ -179,6 +179,28 @@ if (!gotTheLock) {
 }
 
 app.whenReady().then(() => {
+  // Set up CSP to allow Jam recording scripts in sandboxed windows
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const csp = [
+      "default-src 'self' http://localhost:* https://localhost:*",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* https://js.jam.dev https://js.jam.test",
+      "connect-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test wss://*.jam.dev wss://*.jam.test",
+      "style-src 'self' 'unsafe-inline' http://localhost:* https://localhost:*",
+      "img-src 'self' data: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test",
+      "font-src 'self' data: http://localhost:* https://localhost:*",
+      "frame-src 'self' https://*.jam.dev https://*.jam.test",
+      "worker-src 'self' blob: http://localhost:* https://localhost:*",
+      "media-src 'self' blob: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test",
+    ].join("; ");
+
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [csp],
+      },
+    });
+  });
+
   setupProtocol();
   createWindow();
 
