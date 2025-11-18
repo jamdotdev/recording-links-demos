@@ -9,11 +9,13 @@
 
     <meta name="jam:team" content="f5f89d61-4a4c-4d85-afe1-e5acafd558b5" />
     <meta name="jam:team" content="87cdf305-4dfc-4070-a2a8-fd3a7b582097" />
+    <meta name="jam:team" content="634eaf31-20c9-0300-2638-3fa158294736" />
+    <meta name="jam:blur" content="form" />
   </head>
   <body>
     <ul>
       <li data-script-block="recorder">
-        <strong>Is recorder.js loaded?</strong>
+        <strong data-private>Is recorder.js loaded?</strong>
         <span data-script-loaded="no">No</span>
       </li>
       <li data-script-block="capture">
@@ -22,13 +24,13 @@
       </li>
     </ul>
     <div>
-      <button type="button" data-script-loader="recorder">
+      <button data-jam-blur type="button" data-script-loader="recorder">
         Load recorder.js
       </button>
     </div>
-    <form class="hidden">
+    <form>
       <label>
-        <strong>Recording ID:</strong>
+        <strong data-private data-jam-blur="no">Recording ID:</strong>
         <input name="recordingId" placeholder="verify" />
       </label>
       <button type="submit">Open recorder</button>

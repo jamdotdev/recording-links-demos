@@ -13,6 +13,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@jam.dev/recording-links": "0.1.3"
+    "@jam.dev/recording-links": "^0.1.3",
+    "@jam.dev/sdk": "^0.0.6"
   }
 }
