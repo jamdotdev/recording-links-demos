@@ -3,7 +3,6 @@ import {
   BrowserWindow,
   desktopCapturer,
   Menu,
-  protocol,
   session,
 } from "electron";
 import * as path from "path";

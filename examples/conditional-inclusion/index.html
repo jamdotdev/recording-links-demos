@@ -73,25 +73,6 @@
         };
 
         // Method 2: Also try window.location for better compatibility
-        const attemptDirectLaunch = () => {
-          const beforeUnload = Date.now();
-          window.location.href = protocolUrl;
-
-          // If we're still here after a short time, the app probably isn't installed
-          setTimeout(() => {
-            const timeElapsed = Date.now() - beforeUnload;
-            if (timeElapsed < 1500) {
-              console.log('Electron app not detected, staying on web page');
-              // Reset the URL if it was changed
-              if (window.location.protocol === 'jam-electron-demo:') {
-                window.history.replaceState({}, '', window.location.pathname);
-              }
-            } else {
-              console.log('Electron app may have launched');
-            }
-          }, 1000);
-        };
-
         // Use iframe method as it's less disruptive
         attemptLaunch();
       })();
