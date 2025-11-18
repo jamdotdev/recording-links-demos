@@ -84,21 +84,6 @@ function createRecorderWindow(url: string) {
 function handleDeepLink(url: string) {
   console.log("Deep link received:", url);
 
-  // If window doesn't exist yet, store the URL for later
-  if (!mainWindow) {
-    deepLinkUrl = url;
-    return;
-  }
-
-  // Focus the window
-  if (mainWindow.isMinimized()) {
-    mainWindow.restore();
-  }
-  mainWindow.focus();
-
-  // Send the URL to the renderer process
-  mainWindow.webContents.send("deep-link", url);
-
   // Parse the URL and handle different actions
   try {
     const parsedUrl = new URL(url);
@@ -107,11 +92,32 @@ function handleDeepLink(url: string) {
 
     console.log("Deep link action:", action, "params:", params);
 
-    // Example: handle opening a specific recording
-    if (action === "open" && params.recording) {
-      // You can add custom logic here or send to renderer
-      console.log("Opening recording:", params.recording);
+    // Filter jam-* parameters
+    const jamParams = Object.entries(params)
+      .filter(([key]) => key.startsWith("jam-"))
+      .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+
+    const hasJamParams = Object.keys(jamParams).length > 0;
+
+    console.log("Jam parameters detected:", hasJamParams);
+    if (hasJamParams) {
+      console.log("Jam params:", jamParams);
     }
+
+    // TODO: Will implement dual-window logic in next milestone
+    // For now, just focus main window
+    if (!mainWindow) {
+      deepLinkUrl = url;
+      return;
+    }
+
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+
+    // Send the URL to the renderer process
+    mainWindow.webContents.send("deep-link", url);
   } catch (err) {
     console.error("Failed to parse deep link URL:", err);
   }
