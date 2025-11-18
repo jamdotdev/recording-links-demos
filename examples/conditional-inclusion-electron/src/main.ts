@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
+let recorderWindow: BrowserWindow | null = null;
 let deepLinkUrl: string | null = null;
 
 // Protocol handler for jam-electron-demo://
@@ -44,6 +45,40 @@ function createWindow() {
     handleDeepLink(deepLinkUrl);
     deepLinkUrl = null;
   }
+}
+
+function createRecorderWindow(url: string) {
+  console.log("Creating/focusing recorder window with URL:", url);
+
+  // If recorder window already exists, focus it and reload with new URL
+  if (recorderWindow) {
+    if (recorderWindow.isMinimized()) {
+      recorderWindow.restore();
+    }
+    recorderWindow.focus();
+    recorderWindow.loadURL(url);
+    return;
+  }
+
+  // Create new recorder window
+  recorderWindow = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  });
+
+  // Load the URL with jam parameters
+  recorderWindow.loadURL(url);
+  recorderWindow.webContents.openDevTools();
+
+  recorderWindow.on("closed", () => {
+    recorderWindow = null;
+  });
 }
 
 function handleDeepLink(url: string) {
