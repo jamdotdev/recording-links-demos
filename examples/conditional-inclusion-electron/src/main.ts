@@ -12,6 +12,12 @@ import isDev from "electron-is-dev";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Window dimension constants
+const MAIN_WINDOW_WIDTH = 1200;
+const MAIN_WINDOW_HEIGHT = 800;
+const RECORDER_WINDOW_WIDTH = 1000;
+const RECORDER_WINDOW_HEIGHT = 700;
+
 let mainWindow: BrowserWindow | null = null;
 let recorderWindow: BrowserWindow | null = null;
 let deepLinkUrl: string | null = null;
@@ -19,10 +25,14 @@ let deepLinkUrl: string | null = null;
 // Protocol handler for jam-electron-demo://
 const PROTOCOL_SCHEME = "jam-electron-demo";
 
+/**
+ * Creates the main application window.
+ * Loads the web app from localhost in dev mode, or from web-dist in production.
+ */
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: MAIN_WINDOW_WIDTH,
+    height: MAIN_WINDOW_HEIGHT,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -52,6 +62,11 @@ function createWindow() {
   }
 }
 
+/**
+ * Creates or focuses the recorder window with jam-* parameters.
+ * Reuses existing window if already open, otherwise creates a new one.
+ * @param url - The URL to load in the recorder window (includes jam-* params)
+ */
 function createRecorderWindow(url: string) {
   console.log("Creating/focusing recorder window with URL:", url);
 
@@ -67,8 +82,8 @@ function createRecorderWindow(url: string) {
 
   // Create new recorder window
   recorderWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: RECORDER_WINDOW_WIDTH,
+    height: RECORDER_WINDOW_HEIGHT,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -85,6 +100,11 @@ function createRecorderWindow(url: string) {
   });
 }
 
+/**
+ * Handles deep link protocol URLs (jam-electron-demo://).
+ * Opens dual windows if jam-* parameters are present, otherwise focuses main window.
+ * @param url - The protocol URL to handle
+ */
 function handleDeepLink(url: string) {
   console.log("Deep link received:", url);
 
@@ -121,9 +141,7 @@ function handleDeepLink(url: string) {
         : "file://" + path.join(__dirname, "..", "web-dist", "index.html");
       const queryString = parsedUrl.search; // Includes the leading '?'
       const hash = parsedUrl.hash; // Includes the leading '#'
-      const recorderUrl = isDev
-        ? `${baseUrl}${queryString}${hash}`
-        : `${baseUrl}${queryString}${hash}`;
+      const recorderUrl = `${baseUrl}${queryString}${hash}`;
 
       console.log("Opening recorder window with URL:", recorderUrl);
       createRecorderWindow(recorderUrl);
@@ -256,6 +274,13 @@ if (!gotTheLock) {
 
 app.whenReady().then(() => {
   // Set up CSP to allow Jam recording scripts in sandboxed windows
+  // NOTE: Session-based CSP is required because Electron's sandbox mode
+  // ignores meta tag CSP. This must be set via onHeadersReceived.
+  //
+  // CSP Directives explained:
+  // - script-src: 'unsafe-inline' and 'unsafe-eval' required for Jam SDK dynamic imports
+  // - connect-src: wss://*.jam.dev for WebSocket connections to Jam recording service
+  // - *.jam.dev and *.jam.test:* wildcards allow staging/testing environments
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = [
       "default-src 'self' http://localhost:* https://localhost:*",
@@ -341,7 +366,7 @@ app.whenReady().then(() => {
           callback({});
         });
     },
-    // TODO - turn this on/off to use (disable) the mac system picker
+    // Use macOS system picker UI. Set to false to use programmatic auto-selection only.
     { useSystemPicker: true },
   );
 
