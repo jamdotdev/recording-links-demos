@@ -1,4 +1,4 @@
-import { app, BrowserWindow, protocol, session } from "electron";
+import { app, BrowserWindow, Menu, protocol, session } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import isDev from "electron-is-dev";
@@ -112,7 +112,9 @@ function handleDeepLink(url: string) {
       }
 
       // Construct URL with jam parameters for recorder window
-      const baseUrl = isDev ? "http://localhost:5173" : "file://" + path.join(__dirname, "..", "web-dist", "index.html");
+      const baseUrl = isDev
+        ? "http://localhost:5173"
+        : "file://" + path.join(__dirname, "..", "web-dist", "index.html");
       const queryString = parsedUrl.search; // Includes the leading '?'
       const hash = parsedUrl.hash; // Includes the leading '#'
       const recorderUrl = isDev
@@ -149,6 +151,74 @@ function setupProtocol() {
   }
 }
 
+// Create application menu
+function setupMenu() {
+  const template: Electron.MenuItemConstructorOptions[] = [
+    // macOS app menu
+    ...(process.platform === "darwin"
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: "about" as const },
+              { type: "separator" as const },
+              { role: "services" as const },
+              { type: "separator" as const },
+              { role: "hide" as const },
+              { role: "hideOthers" as const },
+              { role: "unhide" as const },
+              { type: "separator" as const },
+              { role: "quit" as const },
+            ],
+          },
+        ]
+      : []),
+    // Edit menu
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" as const },
+        { role: "redo" as const },
+        { type: "separator" as const },
+        { role: "cut" as const },
+        { role: "copy" as const },
+        { role: "paste" as const },
+        { role: "selectAll" as const },
+      ],
+    },
+    // View menu
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" as const },
+        { role: "forceReload" as const },
+        { role: "toggleDevTools" as const },
+        { type: "separator" as const },
+        { role: "resetZoom" as const },
+        { role: "zoomIn" as const },
+        { role: "zoomOut" as const },
+        { type: "separator" as const },
+        { role: "togglefullscreen" as const },
+      ],
+    },
+    // Help menu
+    {
+      label: "Help",
+      submenu: [
+        {
+          label: "Report a Bug 🍓",
+          click: () => {
+            handleDeepLink(`${PROTOCOL_SCHEME}://open?jam-recording=XhC17WY`);
+          },
+        },
+      ],
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 // Handle the app being launched with a protocol URL
 app.on("open-url", (event, url) => {
   event.preventDefault();
@@ -163,7 +233,9 @@ if (!gotTheLock) {
 } else {
   app.on("second-instance", (event, commandLine) => {
     // Windows/Linux: commandLine will contain the protocol URL
-    const url = commandLine.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
+    const url = commandLine.find((arg) =>
+      arg.startsWith(`${PROTOCOL_SCHEME}://`),
+    );
     if (url) {
       handleDeepLink(url);
     }
@@ -183,14 +255,14 @@ app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = [
       "default-src 'self' http://localhost:* https://localhost:*",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* https://js.jam.dev https://js.jam.test",
-      "connect-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test wss://*.jam.dev wss://*.jam.test",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
+      "connect-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:* wss://*.jam.dev wss://*.jam.test:*",
       "style-src 'self' 'unsafe-inline' http://localhost:* https://localhost:*",
-      "img-src 'self' data: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test",
+      "img-src 'self' data: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
       "font-src 'self' data: http://localhost:* https://localhost:*",
-      "frame-src 'self' https://*.jam.dev https://*.jam.test",
+      "frame-src 'self' https://*.jam.dev https://*.jam.test:*",
       "worker-src 'self' blob: http://localhost:* https://localhost:*",
-      "media-src 'self' blob: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test",
+      "media-src 'self' blob: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
     ].join("; ");
 
     callback({
@@ -202,12 +274,15 @@ app.whenReady().then(() => {
   });
 
   setupProtocol();
+  setupMenu();
   createWindow();
 
   // macOS: Check if app was launched with a protocol URL
   if (process.platform === "darwin") {
     const argv = process.argv;
-    const protocolUrl = argv.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
+    const protocolUrl = argv.find((arg) =>
+      arg.startsWith(`${PROTOCOL_SCHEME}://`),
+    );
     if (protocolUrl) {
       handleDeepLink(protocolUrl);
     }
@@ -215,7 +290,9 @@ app.whenReady().then(() => {
 
   // Windows/Linux: Check command line args
   if (process.platform === "win32" || process.platform === "linux") {
-    const protocolUrl = process.argv.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
+    const protocolUrl = process.argv.find((arg) =>
+      arg.startsWith(`${PROTOCOL_SCHEME}://`),
+    );
     if (protocolUrl) {
       handleDeepLink(protocolUrl);
     }
