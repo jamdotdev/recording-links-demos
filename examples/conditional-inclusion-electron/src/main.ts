@@ -1,4 +1,11 @@
-import { app, BrowserWindow, Menu, protocol, session } from "electron";
+import {
+  app,
+  BrowserWindow,
+  desktopCapturer,
+  Menu,
+  protocol,
+  session,
+} from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import isDev from "electron-is-dev";
@@ -269,6 +276,47 @@ app.whenReady().then(() => {
         "Content-Security-Policy": [csp],
       },
     });
+  });
+
+  // Set up screen capture source selection
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    desktopCapturer
+      .getSources({ types: ["screen", "window"] })
+      .then((sources) => {
+        console.log("Available sources:", sources.map((s) => s.name));
+
+        // Filter out the recorder window to prevent recursive capture
+        const validSources = sources.filter((source) => {
+          // Exclude windows with "Jam" or recorder-related names
+          const isRecorderWindow =
+            source.name.includes("Recorder") ||
+            source.name.includes("DevTools");
+          return !isRecorderWindow;
+        });
+
+        console.log("Valid sources:", validSources.map((s) => s.name));
+
+        // Selection strategy (preference to app windows):
+        // 1. First app window (type === 'window', excluding recorder)
+        // 2. First screen
+        // 3. Any first valid source
+
+        const appWindow = validSources.find((s) => s.id.startsWith("window:"));
+        const screen = validSources.find((s) => s.id.startsWith("screen:"));
+        const selectedSource = appWindow || screen || validSources[0];
+
+        if (selectedSource) {
+          console.log("Selected source:", selectedSource.name);
+          callback({ video: selectedSource, audio: "loopback" });
+        } else {
+          console.error("No valid sources available for capture");
+          callback({});
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting desktop sources:", error);
+        callback({});
+      });
   });
 
   setupProtocol();
