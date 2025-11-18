@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "bun run build:web && bun run copy:web",
-    "build": "tsc && bash scripts/build-electron.sh --dir",
+    "build": "bun run prebuild && bun run build:electron && bash scripts/build-electron.sh --dir",
     "build:web": "cd ../conditional-inclusion && bun run build",
     "build:electron": "tsc && vite build --config vite.electron.config.ts",
     "copy:web": "rm -rf web-dist && cp -r ../conditional-inclusion/dist web-dist",
