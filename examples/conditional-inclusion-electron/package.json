@@ -30,6 +30,9 @@
     "vite-plugin-electron-renderer": "^0.14.0"
   },
   "build": {
+    "extraMetadata": {
+      "name": "conditional-inclusion-electron"
+    },
     "appId": "com.jam.conditional-inclusion-electron",
     "productName": "Jam Conditional Inclusion Demo",
     "directories": {
