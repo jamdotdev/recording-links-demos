@@ -44,6 +44,14 @@
           return;
         }
 
+        // Check if current URL has jam-* parameters (means we're in recorder window)
+        const params = new URLSearchParams(window.location.search);
+        const hasJamParams = Array.from(params.keys()).some(key => key.startsWith('jam-'));
+        if (hasJamParams) {
+          console.log('Page has jam parameters - already in recorder context, skipping forward');
+          return;
+        }
+
         // Try to detect and launch the Electron app
         const protocolUrl = 'jam-electron-demo://open' + window.location.search + window.location.hash;
 

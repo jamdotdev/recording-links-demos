@@ -104,20 +104,38 @@ function handleDeepLink(url: string) {
       console.log("Jam params:", jamParams);
     }
 
-    // TODO: Will implement dual-window logic in next milestone
-    // For now, just focus main window
-    if (!mainWindow) {
-      deepLinkUrl = url;
-      return;
-    }
+    // Dual-window logic: handle jam-* parameters
+    if (hasJamParams) {
+      // Ensure main window exists
+      if (!mainWindow) {
+        createWindow();
+      }
 
-    if (mainWindow.isMinimized()) {
-      mainWindow.restore();
-    }
-    mainWindow.focus();
+      // Construct URL with jam parameters for recorder window
+      const baseUrl = isDev ? "http://localhost:5173" : "file://" + path.join(__dirname, "..", "web-dist", "index.html");
+      const queryString = parsedUrl.search; // Includes the leading '?'
+      const hash = parsedUrl.hash; // Includes the leading '#'
+      const recorderUrl = isDev
+        ? `${baseUrl}${queryString}${hash}`
+        : `${baseUrl}${queryString}${hash}`;
 
-    // Send the URL to the renderer process
-    mainWindow.webContents.send("deep-link", url);
+      console.log("Opening recorder window with URL:", recorderUrl);
+      createRecorderWindow(recorderUrl);
+    } else {
+      // No jam params: just focus main window
+      if (!mainWindow) {
+        deepLinkUrl = url;
+        return;
+      }
+
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+
+      // Send the URL to the renderer process
+      mainWindow.webContents.send("deep-link", url);
+    }
   } catch (err) {
     console.error("Failed to parse deep link URL:", err);
   }
