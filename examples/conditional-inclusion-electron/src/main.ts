@@ -151,10 +151,18 @@ function createRecorderWindow(url: string) {
 /**
  * Handles deep link protocol URLs (jam-electron-demo://).
  * Opens dual windows if jam-* parameters are present, otherwise focuses main window.
+ * If called before app is ready, stores URL for later handling.
  * @param url - The protocol URL to handle
  */
 function handleDeepLink(url: string) {
   console.log("Deep link received:", url);
+
+  // If app isn't ready yet, store URL and handle it after window creation
+  if (!app.isReady() || !mainWindow) {
+    console.log("App not ready, storing deep link for later:", url);
+    deepLinkUrl = url;
+    return;
+  }
 
   // Parse the URL and handle different actions
   try {
@@ -178,11 +186,6 @@ function handleDeepLink(url: string) {
 
     // Dual-window logic: handle jam-* parameters
     if (hasJamParams) {
-      // Ensure main window exists
-      if (!mainWindow) {
-        createWindow();
-      }
-
       // Construct URL with jam parameters for recorder window
       const baseUrl = isDev
         ? "http://localhost:5173"
@@ -195,11 +198,6 @@ function handleDeepLink(url: string) {
       createRecorderWindow(recorderUrl);
     } else {
       // No jam params: just focus main window
-      if (!mainWindow) {
-        deepLinkUrl = url;
-        return;
-      }
-
       if (mainWindow.isMinimized()) {
         mainWindow.restore();
       }
