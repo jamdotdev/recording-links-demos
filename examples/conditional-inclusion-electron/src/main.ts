@@ -1,4 +1,11 @@
-import { app, BrowserWindow, desktopCapturer, Menu, session } from "electron";
+import {
+  app,
+  BrowserWindow,
+  desktopCapturer,
+  Menu,
+  screen,
+  session,
+} from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import isDev from "electron-is-dev";
@@ -20,13 +27,49 @@ let deepLinkUrl: string | null = null;
 const PROTOCOL_SCHEME = "jam-electron-demo";
 
 /**
+ * Gets the bounds of the currently active display (where cursor is located).
+ * Falls back to primary display if cursor position unavailable.
+ * @returns Display bounds object with x, y, width, height
+ */
+function getActiveDisplayBounds() {
+  const cursorPoint = screen.getCursorScreenPoint();
+  const activeDisplay = screen.getDisplayNearestPoint(cursorPoint);
+  return activeDisplay.workArea;
+}
+
+/**
+ * Calculates centered position for a window on the active display.
+ * @param windowWidth - Width of window to position
+ * @param windowHeight - Height of window to position
+ * @param offsetX - Optional horizontal offset from center
+ * @returns Object with x and y coordinates
+ */
+function getCenteredPosition(
+  windowWidth: number,
+  windowHeight: number,
+  offsetX = 0,
+) {
+  const displayBounds = getActiveDisplayBounds();
+  return {
+    x: Math.floor(
+      displayBounds.x + (displayBounds.width - windowWidth) / 2 + offsetX,
+    ),
+    y: Math.floor(displayBounds.y + (displayBounds.height - windowHeight) / 2),
+  };
+}
+
+/**
  * Creates the main application window.
  * Loads the web app from localhost in dev mode, or from web-dist in production.
  */
 function createWindow() {
+  const position = getCenteredPosition(MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
+
   mainWindow = new BrowserWindow({
     width: MAIN_WINDOW_WIDTH,
     height: MAIN_WINDOW_HEIGHT,
+    x: position.x,
+    y: position.y,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -59,6 +102,7 @@ function createWindow() {
 /**
  * Creates or focuses the recorder window with jam-* parameters.
  * Reuses existing window if already open, otherwise creates a new one.
+ * Positions window offset from main window for dual-window visibility.
  * @param url - The URL to load in the recorder window (includes jam-* params)
  */
 function createRecorderWindow(url: string) {
@@ -74,10 +118,20 @@ function createRecorderWindow(url: string) {
     return;
   }
 
+  // Position recorder window offset from center (to right of main window)
+  const offsetX = MAIN_WINDOW_WIDTH / 2 + 50;
+  const position = getCenteredPosition(
+    RECORDER_WINDOW_WIDTH,
+    RECORDER_WINDOW_HEIGHT,
+    offsetX,
+  );
+
   // Create new recorder window
   recorderWindow = new BrowserWindow({
     width: RECORDER_WINDOW_WIDTH,
     height: RECORDER_WINDOW_HEIGHT,
+    x: position.x,
+    y: position.y,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
