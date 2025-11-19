@@ -1,10 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  desktopCapturer,
-  Menu,
-  session,
-} from "electron";
+import { app, BrowserWindow, desktopCapturer, Menu, session } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import isDev from "electron-is-dev";
@@ -230,7 +224,8 @@ function setupMenu() {
         {
           label: "Report a Bug 🍓",
           click: () => {
-            handleDeepLink(`${PROTOCOL_SCHEME}://open?jam-recording=XhC17WY`);
+            // handleDeepLink(`${PROTOCOL_SCHEME}://open?jam-recording=XhC17WY`); // aidan dev
+            handleDeepLink(`${PROTOCOL_SCHEME}://open?jam-recording=HGWzdWc`); // prod
           },
         },
       ],
