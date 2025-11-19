@@ -33,6 +33,7 @@
     "extraMetadata": {
       "name": "conditional-inclusion-electron"
     },
+    "npmRebuild": false,
     "appId": "com.jam.conditional-inclusion-electron",
     "productName": "Jam Conditional Inclusion Demo",
     "directories": {
