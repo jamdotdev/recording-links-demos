@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "start": "open \"release/mac-arm64/Jam Conditional Inclusion Demo.app\"",
+    "start": "bun run start:mac",
+    "start:mac": "open \"release/mac-arm64/Jam Conditional Inclusion Demo.app\"",
+    "start:win": "start \"release\\win-unpacked\\Jam Conditional Inclusion Demo.exe\"",
+    "start:linux": "\"release/linux-unpacked/jam-conditional-inclusion-demo\"",
     "prebuild": "bun run build:web && bun run copy:web",
     "build": "bun run prebuild && bun run build:electron && electron-builder --dir",
     "build:web": "cd ../conditional-inclusion && bun run build",

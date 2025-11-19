@@ -42,50 +42,21 @@
       <button type="submit">Open recorder</button>
     </form>
     <script>
-      // Auto-forward detection for Electron app
+      // Auto-forward to Electron app if protocol handler is installed
+      //
+      // NOTE: This is a simplified approach for demo purposes only.
+      // In a production app, you should:
+      // 1. Detect if the app is installed before attempting redirect
+      // 2. Provide fallback UI with download links if app not installed
+      // 3. Handle the case where protocol launch fails gracefully
+      // 4. Consider user privacy - don't auto-launch without user consent
+      // 5. Prevent infinite redirects if app fails to launch
       (function() {
-        // Frame-busting: Only run if we're the top-level window to prevent
-        // malicious iframe embedding from triggering protocol handlers
-        if (window.self !== window.top) {
-          console.log('Running in iframe, skipping Electron auto-forward');
-          return;
-        }
+        // Skip if already in Electron
+        if (window.electronAPI?.isElectron) return;
 
-        // Check if we're already in Electron (via the preload script API)
-        if (window.electronAPI && window.electronAPI.isElectron) {
-          console.log('Already running in Electron app');
-          return;
-        }
-
-        // Check if current URL has jam-* parameters (means we're in recorder window)
-        const params = new URLSearchParams(window.location.search);
-        const hasJamParams = Array.from(params.keys()).some(key => key.startsWith('jam-'));
-        if (hasJamParams) {
-          console.log('Page has jam parameters - already in recorder context, skipping forward');
-          return;
-        }
-
-        // Try to detect and launch the Electron app
-        const protocolUrl = 'jam-electron-demo://open' + window.location.search + window.location.hash;
-
-        console.log('Attempting to forward to Electron app:', protocolUrl);
-
-        // Method 1: Try to navigate to the protocol URL
-        const attemptLaunch = () => {
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = protocolUrl;
-          document.body.appendChild(iframe);
-
-          // Clean up the iframe after a short delay
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 2000);
-        };
-
-        // Method 2: Also try window.location for better compatibility
-        // Use iframe method as it's less disruptive
-        attemptLaunch();
+        // Attempt to open in Electron app via protocol handler
+        window.location.href = 'jam-electron-demo://open' + window.location.search + window.location.hash;
       })();
     </script>
     <script type="module" src="/src/main.ts"></script>

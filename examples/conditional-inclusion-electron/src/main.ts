@@ -274,13 +274,13 @@ app.whenReady().then(() => {
   //
   // CSP Directives explained:
   // - script-src: 'unsafe-inline' and 'unsafe-eval' required for Jam SDK dynamic imports
-  // - connect-src: wss://*.jam.dev for WebSocket connections to Jam recording service
   // - *.jam.dev and *.jam.test:* wildcards allow staging/testing environments
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = [
       "default-src 'self' http://localhost:* https://localhost:*",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
-      "connect-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:* wss://*.jam.dev wss://*.jam.test:*",
+      "script-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
+      "connect-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
+      // TODO - can we put `unsafe-inline` _only_ on style-src for Jam windows?
       "style-src 'self' 'unsafe-inline' http://localhost:* https://localhost:*",
       "img-src 'self' data: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
       "font-src 'self' data: http://localhost:* https://localhost:*",
