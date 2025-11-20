@@ -58,6 +58,7 @@ export function setupMenu() {
         {
           label: "Report a Bug 🍓",
           click: () => {
+            // TODO - extract ID to a better const
             jam.openRecorder("HGWzdWc");
           },
         },

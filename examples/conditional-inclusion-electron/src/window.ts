@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const WEB_DIST_DIR = path.join(__dirname, "..", "web-dist");
 
+// TODO - factory function? allow us to override things like preload (or add preloads)
 export function createWindow(
   options?: Electron.BrowserWindowConstructorOptions,
 ) {

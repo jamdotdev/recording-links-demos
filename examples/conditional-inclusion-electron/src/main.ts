@@ -19,6 +19,8 @@ const PROTOCOL_SCHEME = "jam-electron-demo";
 // Initialize before app ready to ensure BrowserWindow
 // session `webRequest` CSP handlers are installed
 jam.initialize({
+  // TODO - reduce scope by bringing `recorder` references into SDK,
+  //        doing so will allow us to deref on sessions (per recorder window)
   openRecorder(data: { recordingId: string; title?: string }) {
     if (!recorderWindow) {
       const mainBounds = mainWindow?.getBounds();
