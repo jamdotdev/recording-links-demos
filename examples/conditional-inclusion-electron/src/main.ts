@@ -2,15 +2,9 @@ import { app, BrowserWindow } from "electron";
 
 import * as jam from "./jam";
 import * as menu from "./menu";
-import * as utils from "./utils";
-import * as win from "./window";
-
-// Window dimension constants
-const MAIN_WINDOW_DIMS = { width: 1200, height: 800 };
-const RECORDER_WINDOW_DIMS = { width: 1000, height: 700 };
+import * as windows from "./windows";
 
 let mainWindow: BrowserWindow | null = null;
-let recorderWindow: BrowserWindow | null = null;
 let deepLinkUrl: string | null = null;
 
 // Protocol handler for jam-electron-demo://
@@ -19,35 +13,15 @@ const PROTOCOL_SCHEME = "jam-electron-demo";
 // Initialize before app ready to ensure BrowserWindow
 // session `webRequest` CSP handlers are installed
 jam.initialize({
-  // TODO - reduce scope by bringing `recorder` references into SDK,
-  //        doing so will allow us to deref on sessions (per recorder window)
-  openRecorder(data: { recordingId: string; title?: string }) {
-    if (!recorderWindow) {
-      const mainBounds = mainWindow?.getBounds();
-      const position = mainBounds
-        ? {
-            ...RECORDER_WINDOW_DIMS,
-            x:
-              mainBounds.x + mainBounds.width + 10 - RECORDER_WINDOW_DIMS.width,
-            y: mainBounds.y - 10,
-          }
-        : utils.getCenteredRect(RECORDER_WINDOW_DIMS);
-
-      recorderWindow = win.createWindow(position);
-
-      recorderWindow.on("closed", () => {
-        recorderWindow = null;
-      });
-    } else if (recorderWindow.isMinimized()) {
-      recorderWindow.restore();
+  openRecorder(jamData) {
+    const win = windows.findOrCreateWindow("recorder");
+    if (win.isMinimized()) {
+      win.restore();
     }
 
-    // TODO - do a better job of merging params
-    win.loadContents(recorderWindow, {
-      search: `?jam-recording=${data.recordingId}&jam-title=${data.title}`,
-    });
+    windows.loadContents(win, jamData);
 
-    return recorderWindow;
+    return win;
   },
 });
 
@@ -58,7 +32,10 @@ app.whenReady().then(() => {
   }
 
   menu.setupMenu();
-  mainWindow = win.createWindow(utils.getCenteredRect(MAIN_WINDOW_DIMS));
+
+  // Immediately create and load the main window
+  const win = windows.createNamedWindow("main");
+  windows.loadContents(win);
 
   // macOS: Check if app was launched with a protocol URL
   const launchUrl =
@@ -67,7 +44,10 @@ app.whenReady().then(() => {
 
   if (launchUrl) {
     handleDeepLink(launchUrl);
-    deepLinkUrl = null;
+    return;
+  } else {
+    const win = windows.createNamedWindow("main");
+    windows.loadContents(win);
   }
 });
 
@@ -78,14 +58,18 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
-  if (mainWindow === null) {
-    mainWindow = win.createWindow(utils.getCenteredRect(MAIN_WINDOW_DIMS));
-    win.loadContents(mainWindow);
+  if (deepLinkUrl) {
+    handleDeepLink(deepLinkUrl);
+    return;
+  }
 
-    if (deepLinkUrl) {
-      handleDeepLink(deepLinkUrl);
-      deepLinkUrl = null;
-    }
+  const found = windows.findWindow("main");
+
+  if (found?.isMinimized()) {
+    found.restore();
+  } else if (!found) {
+    const win = windows.createNamedWindow("main");
+    windows.loadContents(win);
   }
 });
 
@@ -105,16 +89,22 @@ if (!gotTheLock) {
     const url = commandLine.find((arg) =>
       arg.startsWith(`${PROTOCOL_SCHEME}://`),
     );
+
     if (url) {
       handleDeepLink(url);
-    } else if (mainWindow) {
-      // Focus the existing window
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-      }
-
-      mainWindow.focus();
+      return;
     }
+
+    const found = windows.findWindow("main");
+    if (!found) {
+      throw new Error("No main window found on second instance");
+    }
+
+    if (found.isMinimized()) {
+      found.restore();
+    }
+
+    found.focus();
   });
 }
 
@@ -132,7 +122,9 @@ function handleDeepLink(url: string) {
     return;
   }
 
-  // TODO: parse the URL with Jam, have us return the stripped params?
+  // Immediately null cached URL if execution reaches here
+  deepLinkUrl = null;
+
   // Parse the URL and handle different actions
   try {
     const parsedUrl = new URL(url);
@@ -141,26 +133,22 @@ function handleDeepLink(url: string) {
       return;
     }
 
-    const jamData = jam.parseJamData(url);
-    const unJammedUrl = jam.applyJamData(url, null);
+    const [unJammedUrl, recorderWindow] = jam.openUrl(parsedUrl);
+    let mainWindow = windows.findWindow("main");
 
-    if (!mainWindow) {
-      mainWindow = win.createWindow(utils.getCenteredRect(MAIN_WINDOW_DIMS));
-      win.loadContents(mainWindow, new URL(unJammedUrl));
-    } else {
+    if (mainWindow) {
+      // Send the URL to the renderer process
+      mainWindow.webContents.send("deep-link", unJammedUrl);
+
       if (mainWindow.isMinimized()) {
         mainWindow.restore();
       }
-    }
-
-    // Send the URL to the renderer process
-    mainWindow.webContents.send("deep-link", unJammedUrl);
-
-    if (jamData) {
-      jam.openRecorder(jamData);
     } else {
-      mainWindow.focus();
+      mainWindow = windows.createNamedWindow("main");
+      windows.loadContents(mainWindow, new URL(unJammedUrl));
     }
+
+    (recorderWindow ?? mainWindow).focus();
   } catch (err) {
     console.error("Failed to parse deep link URL:", err);
   }

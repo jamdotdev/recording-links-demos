@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(bun install)",
+      "Bash(bun pm:*)",
+      "Bash(bun search:*)",
+      "Bash(bun run dev)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(bun run build:*)",
+      "Bash(bun run:*)",
+      "Bash(open \"jam-electron-demo://open?jam-recording=XhC17WY\")",
+      "Bash(open:*)",
+      "WebFetch(domain:www.electronjs.org)",
+      "WebFetch(domain:jam.dev)",
+      "mcp__Jam__getDetails",
+      "mcp__Jam__analyzeVideo"
+    ],
+    "deny": []
+  }
+}

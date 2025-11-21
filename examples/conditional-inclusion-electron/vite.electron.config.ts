@@ -8,7 +8,6 @@ export default defineConfig({
     lib: {
       entry: {
         main: resolve(__dirname, "src/main.ts"),
-        preload: resolve(__dirname, "src/preload.ts"),
       },
       formats: ["es"],
     },

@@ -52,8 +52,8 @@
       // 4. Consider user privacy - don't auto-launch without user consent
       // 5. Prevent infinite redirects if app fails to launch
       (function() {
-        // Skip if already in Electron
-        if (window.electronAPI?.isElectron) return;
+        // Skip if already in Electron (check user agent)
+        if (navigator.userAgent.includes('Electron')) return;
 
         // Attempt to open in Electron app via protocol handler
         window.location.href = 'jam-electron-demo://open' + window.location.search + window.location.hash;

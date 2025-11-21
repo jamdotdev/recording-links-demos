@@ -8,94 +8,23 @@ import {
 
 let recorderWindow: BrowserWindow | null = null;
 
-type JamData = {
-  recordingId: string;
-  title?: string;
-  // TODO - others?
-};
-
-const DEFAULT_PARSE_JAM_DATA = (url: string | URL) => {
-  const urlObj = typeof url === "string" ? new URL(url) : url;
-  const recordingId = urlObj.searchParams.get("jam-recording");
-
-  if (!recordingId) {
-    return null;
-  }
-
-  return {
-    recordingId,
-    title: urlObj.searchParams.get("jam-title") || "",
-    // TODO - others? automatic `jam-` parsing?
-  };
-};
-
-const DEFAULT_APPLY_JAM_DATA = (
-  baseURL: string | URL,
-  data: JamData | null,
-) => {
-  const urlObj = typeof baseURL === "string" ? new URL(baseURL) : baseURL;
-
-  if (!data) {
-    for (const key in urlObj.searchParams) {
-      if (key.startsWith("jam-")) {
-        urlObj.searchParams.delete(key);
-      }
-    }
-  } else {
-    urlObj.searchParams.set("jam-recording", data.recordingId);
-    if (data.title) {
-      urlObj.searchParams.set("jam-title", data.title);
-    }
-    // TODO - others?
-  }
-
-  return urlObj.href;
-};
-
 const STATE: {
-  parseJamData: (url: string | URL) => JamData | null;
-  applyJamData: (baseURL: string | URL, data: JamData | null) => string;
   openRecorder: (data: JamData) => BrowserWindow;
 } = {
-  parseJamData: DEFAULT_PARSE_JAM_DATA,
-  applyJamData: DEFAULT_APPLY_JAM_DATA,
   openRecorder() {
     throw new Error("Not initialized");
   },
 };
 
-/** Parses Jam data from a given URL using the configured parser. (see #initialize) */
-export function parseJamData(url: string | URL): JamData | null {
-  return STATE.parseJamData(url);
-}
-
-/** Applies Jam data to a base URL using the configured applier. (see #initialize) */
-export function applyJamData(
-  baseURL: string | URL,
-  data: JamData | null,
-): string {
-  return STATE.applyJamData(baseURL, data);
-}
-
 export async function initialize(config: {
   ses?: Session;
   openRecorder: (data: JamData) => BrowserWindow;
-  parseJamData?: (url: string | URL) => JamData | null;
-  applyJamData?: (baseURL: string | URL, data: JamData | null) => string;
 }): Promise<void> {
   if (!app.isReady()) {
     return app.whenReady().then(() => initialize(config));
   }
 
-  const { ses = session.defaultSession, parseJamData, applyJamData } = config;
-
-  if (parseJamData) {
-    STATE.parseJamData = parseJamData;
-  }
-
-  if (applyJamData) {
-    STATE.applyJamData = applyJamData;
-  }
+  const { ses = session.defaultSession } = config;
 
   STATE.openRecorder = config.openRecorder;
 
@@ -105,9 +34,8 @@ export async function initialize(config: {
   // NOTE: Session-based CSP is required because Electron's sandbox mode
   // ignores meta tag CSP. This must be set via onHeadersReceived.
   //
-  // CSP Directives explained:
-  // - script-src: 'unsafe-inline' and 'unsafe-eval' required for Jam SDK dynamic imports
-  // - *.jam.dev and *.jam.test:* wildcards allow staging/testing environments
+  // TODO - probably queue this registration with a `setTimeout`,
+  // so their handlers take precedence
   ses.webRequest.onHeadersReceived((details, callback) => {
     const csp = [
       "default-src 'self' http://localhost:* https://localhost:*",
@@ -199,13 +127,71 @@ export async function initialize(config: {
   );
 }
 
-export function openRecorder(idOrData: string | JamData) {
+export function openRecorder(init: string | JamData) {
   const data =
-    typeof idOrData === "string" ? { recordingId: idOrData } : idOrData;
+    typeof init === "string" ? new JamData({ recordingId: init }) : init;
 
   const win = STATE.openRecorder(data);
 
   win.focus();
 
   return win;
+}
+
+/**
+ * Syntactic sugar for opening the recorder from a URL.
+ * Returns a tuple of the un-jammed URL and the recorder window, if opened.
+ */
+export function openUrl(url: string | URL): [string, BrowserWindow | null] {
+  const parsed = typeof url === "string" ? new URL(url) : url;
+  const jamParams = new URLSearchParams();
+
+  for (const key in parsed.searchParams) {
+    if (key.startsWith("jam-")) {
+      // @ts-expect-error - we know the `get` will not be null
+      jamParams.set(key, parsed.searchParams.get(key));
+      parsed.searchParams.delete(key);
+    }
+  }
+
+  return [
+    parsed.href,
+    jamParams.has("recordingId") ? openRecorder(new JamData(jamParams)) : null,
+  ];
+}
+
+class JamData {
+  private recordingId: string;
+  private title: string | null;
+
+  get searchParams(): URLSearchParams {
+    const params = new URLSearchParams();
+    params.set("jam-recording", this.recordingId);
+    if (this.title) {
+      params.set("jam-title", this.title);
+    }
+    return params;
+  }
+
+  get search(): string {
+    const search = this.searchParams.toString();
+    return search ? `?${search}` : "";
+  }
+
+  constructor(
+    init: URLSearchParams | { recordingId: string; title?: string | null },
+  ) {
+    if (init instanceof URLSearchParams) {
+      const recordingId = init.get("jam-recording");
+      if (!recordingId) {
+        throw new Error("Missing jam-recording parameter");
+      }
+
+      this.recordingId = recordingId;
+      this.title = init.get("jam-title");
+    } else {
+      this.recordingId = init.recordingId;
+      this.title = init.title || null;
+    }
+  }
 }
