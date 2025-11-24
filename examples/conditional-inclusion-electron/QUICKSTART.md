@@ -2,56 +2,125 @@
 
 ## 1. Install SDK
 
-- `npm install @jam.dev/recording-links`
-- Peer dependency: `electron` (already in your app)
+```bash
+npm install @jam.dev/recording-links
+```
+
+Peer dependency: `electron` (already in your app)
 
 ---
 
-## 2. Initialize Jam Electron
+## 2. Initialize Jam Electron (Required)
 
-**Operations performed:**
+Initialize the SDK in your main process before `app.whenReady()`:
 
-- Configures session CSP to allow Jam domains
-- Installs screen capture source filter (excludes recorder window)
-- Exposes API handle to open recording windows (managed separately from your app windows)
+```typescript
+import { app, BrowserWindow } from 'electron';
+import * as jam from '@jam.dev/recording-links/electron';
 
-**Where:** `src/main/index.ts`, called once at app startup
+jam.initialize({
+  openRecorderWindow(session) {
+    return new BrowserWindow({
+      width: 1000,
+      height: 700,
+      webPreferences: {
+        allowRunningInsecureContent: true,
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
+      },
+    });
+  },
+  async loadRecorderPage(win, data) {
+    // Load your app with jam-* query parameters
+    await win.loadURL(`https://my-app.com${data.search}`);
+  },
+});
+```
+
+**What this does:**
+- Installs display media request handler for screen capture
+- Configures window creation and content loading for recorder
+- Manages recorder window lifecycle per session
 
 ---
 
 ## 3. Handle Incoming Jam Links (Recommended)
 
-**Register Protocol (if needed):**
+**Register your app's protocol** (if not already done):
 
-- Add to `electron-builder` config:
-  - `protocols.schemes: ["yourapp"]`
-  - Enables `yourapp://open?jam-recording=ID`
-- **Skip if** your app already has a custom protocol handler
-- **Ensure** query parameters are preserved from incoming links and passed to the SDK
+Add to your `package.json` electron-builder config:
 
-**Wire Handler:**
+```json
+{
+  "build": {
+    "protocols": {
+      "name": "my-app",
+      "schemes": ["myapp"]
+    }
+  }
+}
+```
 
-- Use Jam Electron SDK API handle to route incoming URLs
-- Hook into `app.on('open-url')` (macOS) and `app.on('second-instance')` (Windows/Linux)
+**Wire up protocol handlers** to open Jam recordings:
 
-**Result:**
+```typescript
+import { app } from 'electron';
+import * as jam from '@jam.dev/recording-links/electron';
 
-- Jam links from browser/Slack/email open your app
-- Dual windows launch automatically
+// macOS: Handle protocol URLs
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  const [cleanUrl, recorderWindow] = jam.openUrl(url);
+
+  if (recorderWindow) {
+    recorderWindow.focus();
+  }
+  // cleanUrl has jam-* params removed for your main window
+});
+
+// Windows/Linux: Handle second instance
+app.on('second-instance', (event, commandLine) => {
+  const url = commandLine.find(arg => arg.startsWith('myapp://'));
+  if (url) {
+    const [cleanUrl, recorderWindow] = jam.openUrl(url);
+    if (recorderWindow) {
+      recorderWindow.focus();
+    }
+  }
+});
+```
+
+**Result:** Links like `myapp://open?jam-recording=abc123` will launch your app and open the recorder.
 
 ---
 
 ## 4. Enable In-App Recording (Optional)
 
-**Add Menu Item:**
+Add a menu item to trigger recordings from within your app:
 
-- Call Jam Electron SDK API handle to open recorder from menu item click handler (or any user-triggered action)
-- Common placement: Help menu or user menu
+```typescript
+import { Menu } from 'electron';
+import * as jam from '@jam.dev/recording-links/electron';
 
-**Test:**
+const template = [
+  {
+    label: 'Help',
+    submenu: [
+      {
+        label: 'Report a Bug',
+        click: () => {
+          jam.openRecorder('your-recording-id-here');
+        },
+      },
+    ],
+  },
+];
 
-- Click menu item → Recorder window opens
-- Both windows visible → Screen capture starts
+Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+```
+
+**Test:** Click "Report a Bug" → Recorder window opens and screen capture starts.
 
 ---
 

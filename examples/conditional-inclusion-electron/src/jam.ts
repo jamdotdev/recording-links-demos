@@ -10,22 +10,6 @@ import {
   type WebFrameMain,
 } from "electron";
 
-const STATE: {
-  defaultSession: Session | null;
-  windows: Map<Session, BrowserWindow>;
-  openRecorderWindow(ses: Session): BrowserWindow;
-  loadRecorderPage(win: BrowserWindow, data: JamData): Promise<void>;
-} = {
-  defaultSession: null,
-  windows: new Map<Session, BrowserWindow>(),
-  openRecorderWindow() {
-    throw new Error("Not initialized");
-  },
-  loadRecorderPage() {
-    throw new Error("Not initialized");
-  },
-};
-
 type DisplayMediaRequestHandler = (
   request: DisplayMediaRequestHandlerHandlerRequest,
   callback: DisplayMediaRequestHandlerCallback,
@@ -37,6 +21,111 @@ type DisplayMediaRequestHandlerCallback = (streams: {
   enableLocalEcho?: boolean | undefined;
 }) => void | Promise<void>;
 
+const STATE: {
+  defaultSession: Session | null;
+  windows: Map<Session, BrowserWindow>;
+  openRecorderWindow(ses: Session): BrowserWindow;
+  loadRecorderPage(win: BrowserWindow, data: IJamData): Promise<void>;
+} = {
+  defaultSession: null,
+  windows: new Map<Session, BrowserWindow>(),
+  openRecorderWindow() {
+    throw new Error("Not initialized");
+  },
+  loadRecorderPage() {
+    throw new Error("Not initialized");
+  },
+};
+
+const DEFAULT_DISPLAY_MEDIA_REQUEST_HANDLER = (
+  request: DisplayMediaRequestHandlerHandlerRequest,
+  callback: DisplayMediaRequestHandlerCallback,
+) => {
+  const frame = request.frame;
+  const contents = frame ? webContents.fromFrame(frame) : null;
+  const win = contents ? BrowserWindow.fromWebContents(contents) : null;
+
+  if (isJamRecorder(win)) {
+    desktopCapturer
+      .getSources({ types: ["screen", "window"] })
+      .then((sources) => handleDisplayMediaRequest(sources, callback, win))
+      .catch((error) => {
+        console.error("Error getting desktop sources:", error);
+        callback({});
+      });
+  }
+};
+
+/**
+ * Initialize the Jam SDK for Electron.
+ *
+ * @example Basic setup
+ * ```typescript
+ * import { app, BrowserWindow } from 'electron';
+ * import * as jam from '@jam.dev/recording-links/electron';
+ *
+ * jam.initialize({
+ *   openRecorderWindow(session) {
+ *     return new BrowserWindow({
+ *       width: 1000,
+ *       height: 700,
+ *       webPreferences: {
+ *         allowRunningInsecureContent: true,
+ *         nodeIntegration: false,
+ *         contextIsolation: true,
+ *         sandbox: true,
+ *       },
+ *     });
+ *   },
+ *   async loadRecorderPage(win, data) {
+ *     await win.loadURL(`https://my-app.com${data.searchParams.toString()}`);
+ *   },
+ * });
+ * ```
+ *
+ * @example Multi-session app with custom display media handler
+ * ```typescript
+ * import { session, desktopCapturer, BrowserWindow } from 'electron';
+ * import * as jam from '@jam.dev/recording-links/electron';
+ *
+ * jam.initialize({
+ *   defaultDisplayMediaRequestHandler: null, // Use custom handler per session
+ *   openRecorderWindow(ses) {
+ *     const win = new BrowserWindow({
+ *       width: 1000,
+ *       height: 700,
+ *       webPreferences: {
+ *         allowRunningInsecureContent: true,
+ *         nodeIntegration: false,
+ *         contextIsolation: true,
+ *         sandbox: true,
+ *       },
+ *     });
+ *     win.on('closed', () => console.log('Recorder closed'));
+ *     return win;
+ *   },
+ *   async loadRecorderPage(win, data) {
+ *     const recordingId = data.searchParams.get('jam-recording');
+ *     await win.loadURL(`https://my-app.com/recorder?id=${recordingId}`);
+ *   },
+ * });
+ *
+ * // Install handler on a specific session
+ * const mySession = session.fromPartition('persist:my-session');
+ * mySession.setDisplayMediaRequestHandler(async (request, callback) => {
+ *   const frame = request.frame;
+ *   const win = frame ? BrowserWindow.fromWebContents(frame.webContents) : null;
+ *
+ *   if (jam.isJamRecorder(win)) {
+ *     const sources = await desktopCapturer.getSources({ types: ['screen', 'window'] });
+ *     jam.handleDisplayMediaRequest(sources, callback, win);
+ *   } else {
+ *     // Your app's default behavior
+ *     callback({});
+ *   }
+ * });
+ * ```
+ */
 export async function initialize(config: {
   /**
    * The session upon which we will install Jam's display media request handler.
@@ -84,10 +173,10 @@ export async function initialize(config: {
   openRecorderWindow(ses: Session): BrowserWindow;
   /**
    * A function that takes two arguments—a `BrowserWindow` (opened by
-   * `openRecorderWindow`) and a `JamData` object used to route the window
+   * `openRecorderWindow`) and an `IJamData` object used to route the window
    * to the proper recorder configuration.
    */
-  loadRecorderPage(win: BrowserWindow, data: JamData): Promise<void>;
+  loadRecorderPage(win: BrowserWindow, data: IJamData): Promise<void>;
 }): Promise<void> {
   if (!app.isReady()) {
     return app.whenReady().then(() => initialize(config));
@@ -95,24 +184,7 @@ export async function initialize(config: {
 
   const {
     defaultSession = session.defaultSession,
-    defaultDisplayMediaRequestHandler = (
-      request: DisplayMediaRequestHandlerHandlerRequest,
-      callback: DisplayMediaRequestHandlerCallback,
-    ) => {
-      const frame = request.frame;
-      const contents = frame ? webContents.fromFrame(frame) : null;
-      const win = contents ? BrowserWindow.fromWebContents(contents) : null;
-
-      if (isJamRecorder(win)) {
-        desktopCapturer
-          .getSources({ types: ["screen", "window"] })
-          .then((sources) => handleDisplayMediaRequest(sources, callback, win))
-          .catch((error) => {
-            console.error("Error getting desktop sources:", error);
-            callback({});
-          });
-      }
-    },
+    defaultDisplayMediaRequestHandler = DEFAULT_DISPLAY_MEDIA_REQUEST_HANDLER,
   } = config;
 
   STATE.defaultSession = defaultSession;
@@ -124,24 +196,57 @@ export async function initialize(config: {
     defaultSession.setDisplayMediaRequestHandler(
       defaultDisplayMediaRequestHandler,
       // Use macOS system picker UI. Set to false to use programmatic auto-selection only.
-      { useSystemPicker: false },
+      { useSystemPicker: true },
     );
   }
 }
 
-export function openRecorder(init: string | JamData, ses?: Session) {
+/**
+ * Opens a Jam recorder window for the given recording ID or data.
+ *
+ * @param init - Recording ID string, data object, or URLSearchParams
+ * @param ses - Optional session (defaults to defaultSession from initialize)
+ * @returns The recorder BrowserWindow
+ *
+ * @example
+ * ```typescript
+ * import * as jam from '@jam.dev/recording-links/electron';
+ *
+ * // Open by recording ID
+ * jam.openRecorder('abc123');
+ *
+ * // Open with title
+ * jam.openRecorder({ recordingId: 'abc123', title: 'Bug Report' });
+ *
+ * // Open with URLSearchParams (from protocol handler)
+ * const params = new URLSearchParams('jam-recording=abc123&jam-title=Bug+Report');
+ * jam.openRecorder(params);
+ * ```
+ */
+export function openRecorder(
+  init: string | JamData | ConstructorParameters<typeof JamData>[0],
+  ses?: Session,
+) {
   const browserSession = ses ?? STATE.defaultSession;
   if (browserSession === null) {
     throw new Error("Cannot open recorder: no `session` found or provided");
   }
 
-  const win =
-    STATE.windows.get(browserSession) ??
-    STATE.openRecorderWindow(browserSession);
-  const data =
-    typeof init === "string" ? new JamData({ recordingId: init }) : init;
+  let win = STATE.windows.get(browserSession);
+  if (!win) {
+    win = STATE.openRecorderWindow(browserSession);
 
-  STATE.windows.set(browserSession, win);
+    STATE.windows.set(browserSession, win);
+    win.on("close", () => STATE.windows.delete(browserSession));
+  }
+
+  const data =
+    typeof init === "string"
+      ? new JamData({ recordingId: init })
+      : init instanceof JamData
+        ? init
+        : new JamData(init);
+
   STATE.loadRecorderPage(win, data);
 
   if (win.isMinimized()) {
@@ -174,9 +279,23 @@ export function openUrl(url: string | URL): [string, BrowserWindow | null] {
   ];
 }
 
-class JamData {
-  private recordingId: string;
-  private title: string | undefined | null;
+/**
+ * Data structure representing Jam recording parameters.
+ */
+export interface IJamData {
+  /** Jam recording ID */
+  readonly recordingId: string;
+  /** Optional recording title */
+  readonly title: string | undefined | null;
+  /** URLSearchParams containing jam-* query parameters */
+  readonly searchParams: URLSearchParams;
+  /** Query string with leading '?' (or empty string if no params) */
+  readonly search: string;
+}
+
+class JamData implements IJamData {
+  readonly recordingId: string;
+  readonly title: string | undefined | null;
 
   get searchParams(): URLSearchParams {
     const params = new URLSearchParams();
