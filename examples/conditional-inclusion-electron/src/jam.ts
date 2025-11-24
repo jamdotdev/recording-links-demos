@@ -265,17 +265,18 @@ export function openUrl(url: string | URL): [string, BrowserWindow | null] {
   const parsed = typeof url === "string" ? new URL(url) : url;
   const jamParams = new URLSearchParams();
 
-  for (const key in parsed.searchParams) {
+  for (const [key, value] of parsed.searchParams.entries()) {
     if (key.startsWith("jam-")) {
-      // @ts-expect-error - we know the `get` will not be null
-      jamParams.set(key, parsed.searchParams.get(key));
+      jamParams.set(key, value);
       parsed.searchParams.delete(key);
     }
   }
 
   return [
     parsed.href,
-    jamParams.has("recordingId") ? openRecorder(new JamData(jamParams)) : null,
+    jamParams.has("jam-recording")
+      ? openRecorder(new JamData(jamParams))
+      : null,
   ];
 }
 
