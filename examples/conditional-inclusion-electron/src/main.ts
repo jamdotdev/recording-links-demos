@@ -1,28 +1,32 @@
-import { app, BrowserWindow } from "electron";
+import { app } from "electron";
 
 import * as jam from "./jam";
 import * as menu from "./menu";
 import * as windows from "./windows";
 
-let mainWindow: BrowserWindow | null = null;
 let deepLinkUrl: string | null = null;
 
 // Protocol handler for jam-electron-demo://
 const PROTOCOL_SCHEME = "jam-electron-demo";
 
+// Window dimension constants
+const RECORDER_WINDOW_DIMS = { width: 1000, height: 700 };
+
 // Initialize before app ready to ensure BrowserWindow
 // session `webRequest` CSP handlers are installed
 jam.initialize({
-  openRecorder(jamData) {
-    const win = windows.findOrCreateWindow("recorder");
-    if (win.isMinimized()) {
-      win.restore();
-    }
+  openRecorderWindow() {
+    const mainWindow = windows.findOrCreateWindow("main");
+    const mainBounds = mainWindow.getBounds();
+    const position = {
+      ...RECORDER_WINDOW_DIMS,
+      x: mainBounds.x + mainBounds.width + 10 - RECORDER_WINDOW_DIMS.width,
+      y: mainBounds.y - 10,
+    };
 
-    windows.loadContents(win, jamData);
-
-    return win;
+    return windows.createWindow(position);
   },
+  loadRecorderPage: (win, data) => windows.loadContents(win, data),
 });
 
 app.whenReady().then(() => {
@@ -33,10 +37,6 @@ app.whenReady().then(() => {
 
   menu.setupMenu();
 
-  // Immediately create and load the main window
-  const win = windows.createNamedWindow("main");
-  windows.loadContents(win);
-
   // macOS: Check if app was launched with a protocol URL
   const launchUrl =
     deepLinkUrl ??
@@ -45,10 +45,10 @@ app.whenReady().then(() => {
   if (launchUrl) {
     handleDeepLink(launchUrl);
     return;
-  } else {
-    const win = windows.createNamedWindow("main");
-    windows.loadContents(win);
   }
+
+  const win = windows.createNamedWindow("main");
+  windows.loadContents(win);
 });
 
 app.on("window-all-closed", () => {
@@ -116,7 +116,7 @@ if (!gotTheLock) {
  */
 function handleDeepLink(url: string) {
   // If app isn't ready yet, store URL and handle it after window creation
-  if (!app.isReady() || !mainWindow) {
+  if (!app.isReady()) {
     console.log("App not ready, storing deep link for later:", url);
     deepLinkUrl = url;
     return;
@@ -136,18 +136,13 @@ function handleDeepLink(url: string) {
     const [unJammedUrl, recorderWindow] = jam.openUrl(parsedUrl);
     let mainWindow = windows.findWindow("main");
 
-    if (mainWindow) {
-      // Send the URL to the renderer process
-      mainWindow.webContents.send("deep-link", unJammedUrl);
-
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-      }
-    } else {
+    if (!mainWindow) {
       mainWindow = windows.createNamedWindow("main");
-      windows.loadContents(mainWindow, new URL(unJammedUrl));
+    } else if (mainWindow.isMinimized()) {
+      mainWindow.restore();
     }
 
+    windows.loadContents(mainWindow, new URL(unJammedUrl));
     (recorderWindow ?? mainWindow).focus();
   } catch (err) {
     console.error("Failed to parse deep link URL:", err);

@@ -1,20 +1,22 @@
-import { BrowserWindow, screen } from "electron";
+import {
+  BrowserWindow,
+  type BrowserWindowConstructorOptions,
+  screen,
+} from "electron";
 import isDev from "electron-is-dev";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
-type NamedWindow = "recorder" | "main" | string;
+type NamedWindow = "main";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Window dimension constants
-const MAIN_WINDOW_DIMS = { width: 1200, height: 800 };
-const RECORDER_WINDOW_DIMS = { width: 1000, height: 700 };
-
 // Where the built web files are located
 const WEB_DIST_DIR = path.join(__dirname, "..", "web-dist");
+
+const DEFAULT_WINDOW_DIMS = { width: 1200, height: 800 };
 
 // Local dict of named BrowserWindows
 const windows = new Map<NamedWindow, BrowserWindow>();
@@ -27,37 +29,50 @@ export function findOrCreateWindow(name: NamedWindow): BrowserWindow {
   return findWindow(name) ?? createNamedWindow(name);
 }
 
-export function createNamedWindow(name: NamedWindow): BrowserWindow {
+export function createNamedWindow(
+  name: NamedWindow,
+  options?: BrowserWindowConstructorOptions,
+): BrowserWindow {
   if (windows.has(name)) {
     throw new Error(`Window with name "${name}" already exists.`);
   }
 
-  let created: BrowserWindow;
-  switch (name) {
-    case "recorder": {
-      const mainWindow = findOrCreateWindow("main");
-      const mainBounds = mainWindow.getBounds();
-      const position = {
-        ...RECORDER_WINDOW_DIMS,
-        x: mainBounds.x + mainBounds.width + 10 - RECORDER_WINDOW_DIMS.width,
-        y: mainBounds.y - 10,
-      };
+  const win = createWindow(options);
+  win.on("closed", () => windows.delete(name));
+  windows.set(name, win);
 
-      created = createWindow(position);
-      break;
-    }
-    case "main": {
-      created = createWindow(getCenteredRect(MAIN_WINDOW_DIMS));
-      break;
-    }
-    default:
-      throw new Error(`Unknown window name: ${name}`);
-  }
+  return win;
+}
 
-  created.on("closed", () => windows.delete(name));
-  windows.set(name, created);
-
-  return created;
+export function createWindow(
+  options?: Electron.BrowserWindowConstructorOptions,
+) {
+  return new BrowserWindow({
+    ...getCenteredRect(DEFAULT_WINDOW_DIMS),
+    ...options,
+    webPreferences: {
+      // TODO - DOCUMENT -- MUST BE TRUE FOR JAM!!
+      // (or otherwise set CSP to allow `unsafe-inline` for style-src, +
+      // `*.jam.dev* for script-, connect-, img-, font-, frame-, style-, media-src)
+      //   const csp = [
+      //     "default-src 'self' http://localhost:* https://localhost:*",
+      //     "script-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
+      //     "connect-src 'self' http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
+      //     // CSUP-814: Migrate from CSS-in-JS to rm `unsafe-inline` style-src dependency
+      //     "style-src 'self' 'unsafe-inline' http://localhost:* https://localhost:*",
+      //     "img-src 'self' data: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
+      //     "font-src 'self' data: http://localhost:* https://localhost:*",
+      //     "frame-src 'self' https://*.jam.dev https://*.jam.test:*",
+      //     "worker-src 'self' blob: http://localhost:* https://localhost:*",
+      //     "media-src 'self' blob: http://localhost:* https://localhost:* https://*.jam.dev https://*.jam.test:*",
+      //   ].join("; ");
+      allowRunningInsecureContent: true,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      ...options?.webPreferences,
+    },
+  });
 }
 
 export function loadContents(
@@ -67,14 +82,15 @@ export function loadContents(
   const { path: basePath = "/", search = "", hash = "" } = urlOptions;
 
   if (isDev) {
-    win.loadURL(`http://localhost:5173${basePath}${search}${hash}`);
+    return win.loadURL(`http://localhost:5173${basePath}${search}${hash}`);
   } else {
     // check WEB_DIST_DIR for matching filename: (1) no extension; (2) .html; (3) .htm; (4) / (index.html)
     let filePath: string | undefined = undefined;
 
     for (const ext of ["", ".html", ".htm"]) {
       const fullPath = path.join(WEB_DIST_DIR, `${basePath}${ext}`);
-      if (fs.existsSync(fullPath)) {
+      const stat = fs.statSync(fullPath, { throwIfNoEntry: false });
+      if (stat?.isFile() && !stat.isDirectory()) {
         filePath = fullPath;
         break;
       }
@@ -89,24 +105,8 @@ export function loadContents(
       }
     }
 
-    win.loadFile(filePath, { search, hash });
+    return win.loadFile(filePath, { search, hash });
   }
-}
-
-function createWindow(options?: Electron.BrowserWindowConstructorOptions) {
-  return new BrowserWindow({
-    ...options,
-    webPreferences: {
-      // TODO - DOCUMENT -- MUST BE TRUE FOR JAM!!
-      // (or otherwise set CSP to allow `unsafe-inline` for style-src, +
-      // `*.jam.dev* for script-, connect-, img-, font-, frame-, style-, media-src)
-      // allowRunningInsecureContent: true,
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: true,
-      ...options?.webPreferences,
-    },
-  });
 }
 
 /**

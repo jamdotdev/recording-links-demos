@@ -16,22 +16,6 @@ export default defineConfig({
           },
         },
       },
-      {
-        // Preload script entry point
-        entry: "src/preload.ts",
-        vite: {
-          build: {
-            outDir: "dist",
-            rollupOptions: {
-              external: ["electron"],
-            },
-          },
-        },
-        onstart(options) {
-          // Notify the Electron App to reload the page
-          options.reload();
-        },
-      },
     ]),
   ],
 });

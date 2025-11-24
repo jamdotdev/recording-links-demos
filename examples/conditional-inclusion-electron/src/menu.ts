@@ -1,6 +1,8 @@
 import { app, Menu } from "electron";
 import * as jam from "./jam";
 
+const DEFAULT_JAM_ID = "HGWzdWc";
+
 // Create application menu
 export function setupMenu() {
   const template: Electron.MenuItemConstructorOptions[] = [
@@ -57,10 +59,7 @@ export function setupMenu() {
       submenu: [
         {
           label: "Report a Bug 🍓",
-          click: () => {
-            // TODO - extract ID to a better const
-            jam.openRecorder("HGWzdWc");
-          },
+          click: () => jam.openRecorder(DEFAULT_JAM_ID),
         },
       ],
     },
