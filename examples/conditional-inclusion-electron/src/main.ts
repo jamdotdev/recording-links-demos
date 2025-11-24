@@ -1,6 +1,6 @@
 import { app } from "electron";
+import * as jam from "@jam.dev/recording-links/electron";
 
-import * as jam from "./jam";
 import * as menu from "./menu";
 import * as windows from "./windows";
 

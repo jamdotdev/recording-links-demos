@@ -1,5 +1,5 @@
 import { app, Menu } from "electron";
-import * as jam from "./jam";
+import * as jam from "@jam.dev/recording-links/electron";
 
 const DEFAULT_JAM_ID = "HGWzdWc";
 
