@@ -1,0 +1,75 @@
+{
+  "name": "example-conditional-inclusion-electron",
+  "version": "0.1.0",
+  "description": "Electron wrapper for conditional-inclusion demo",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "bun run start:mac",
+    "start:mac": "open \"release/mac-arm64/Jam Conditional Inclusion Demo.app\"",
+    "start:win": "start \"release\\win-unpacked\\Jam Conditional Inclusion Demo.exe\"",
+    "start:linux": "\"release/linux-unpacked/jam-conditional-inclusion-demo\"",
+    "prebuild": "bun run build:web && bun run copy:web",
+    "build": "bun run prebuild && bun run build:electron && electron-builder --dir",
+    "build:web": "cd ../conditional-inclusion && bun run build",
+    "build:electron": "tsc && vite build --config vite.electron.config.ts",
+    "copy:web": "rm -rf web-dist && cp -r ../conditional-inclusion/dist web-dist",
+    "package": "bun run prebuild && bun run build:electron && bun run build",
+    "package:mac": "bun run prebuild && bun run build:electron && electron-builder --mac",
+    "package:win": "bun run prebuild && bun run build:electron && electron-builder --win",
+    "package:linux": "bun run prebuild && bun run build:electron && electron-builder --linux"
+  },
+  "dependencies": {
+    "@jam.dev/recording-links": "^0.3.0-electron.2",
+    "electron-is-dev": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "electron": "33.4.11",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.5",
+    "vite-plugin-electron": "^0.28.0",
+    "vite-plugin-electron-renderer": "^0.14.0"
+  },
+  "build": {
+    "extraMetadata": {
+      "name": "conditional-inclusion-electron"
+    },
+    "npmRebuild": false,
+    "appId": "com.jam.conditional-inclusion-electron",
+    "productName": "Jam Conditional Inclusion Demo",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "web-dist/**/*"
+    ],
+    "protocols": {
+      "name": "jam-electron-demo",
+      "schemes": ["jam-electron-demo"]
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        },
+        {
+          "target": "zip",
+          "arch": ["universal"]
+        }
+      ]
+    },
+    "win": {
+      "target": ["nsis", "portable"]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Development"
+    }
+  }
+}

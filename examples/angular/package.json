@@ -1,5 +1,5 @@
 {
-  "name": "example:angular",
+  "name": "example-angular",
   "private": true,
   "scripts": {
     "ng": "ng",

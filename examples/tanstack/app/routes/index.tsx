@@ -80,7 +80,7 @@ function Home() {
             window.location.reload();
           }}
         >
-          <label>
+          <label data-private>
             Recording ID:
             <input
               name="recording-id"
