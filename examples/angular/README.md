@@ -1,59 +1,51 @@
 # Angular
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.2.
+An Angular app that installs Jam Recording Links with the
+`@jam.dev/recording-links` npm package, initialized once from the root
+component. Use this when you'd rather install Jam as a dependency than add
+script tags to your HTML.
 
-## Development server
+This example matches the **Angular** snippet in the Jam dashboard under
+**Settings → Jam SDK → Connect Domain**.
 
-To start a local development server, run:
+## What it demonstrates
 
-```bash
-ng serve
-```
+- Installing `@jam.dev/recording-links` and calling `jam.initialize({ teamId })`
+  once in `ngOnInit`.
+- Wrapping the call in `ngZone.runOutsideAngular` so the SDK's listeners don't
+  trigger Angular change detection.
+- The `data-jam-blur` attribute, which blurs an element during recording.
+- Buttons that log to the console, throw an error, and make a network request.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Unlike the script-tag examples, the SDK loads the recorder lazily. The recorder
+and capture scripts download only when someone opens the page through a
+Recording Link, so `window.jam` won't exist on a normal page view.
 
-## Code scaffolding
+## Set your team ID
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Open `src/app/app.component.ts` and replace `JAM_TEAM_ID` in the
+`jam.initialize` call with your own team ID from
+**Settings → Jam SDK → Connect Domain**.
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Run it
 
 ```bash
-ng test
+bun install        # from the repo root, once
+bun run dev --filter example-angular
 ```
 
-## Running end-to-end tests
+The app runs on port 4200.
 
-For end-to-end (e2e) testing, run:
+## Validate end to end
 
-```bash
-ng e2e
-```
+1. In the Jam dashboard, open **Settings → Jam SDK → Connect Domain**, paste
+   your local URL, and click **Verify**. The domain shows as Installed.
+2. Go to **Recording Links**, create a link pointing at the connected domain,
+   and open it.
+3. Record a short session, clicking the three buttons on the page.
+4. Open the resulting Jam. The console logs, the thrown error, and the network
+   request all appear in the DevTools panel.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Docs
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+[Connect your domain](https://jam.dev/docs/custom-recording-domain)

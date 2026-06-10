@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jam Recording Links — HTML example</title>
+
+    <!-- Jam Recording Links — paste these three lines into the <head> of every page. -->
+    <!-- Replace the content value with your own team ID from the Jam dashboard. -->
+    <meta name="jam:team" content="JAM_TEAM_ID" />
+    <script type="module" src="https://js.jam.dev/recorder.js"></script>
+    <script type="module" src="https://js.jam.dev/capture.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Jam Recording Links — HTML example</h1>
+      <p>
+        This page installs Recording Links with plain script tags. Open it
+        through a Recording Link to start a capture, then use the buttons below
+        to generate activity you can check for in the resulting jam.
+      </p>
+      <button id="log">Log to console</button>
+      <button id="error">Throw an error</button>
+      <button id="fetch">Make a network request</button>
+      <p id="status"></p>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

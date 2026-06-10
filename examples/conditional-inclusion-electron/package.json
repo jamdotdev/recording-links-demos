@@ -21,7 +21,7 @@
     "package:linux": "bun run prebuild && bun run build:electron && electron-builder --linux"
   },
   "dependencies": {
-    "@jam.dev/recording-links": "^0.3.0-electron.2",
+    "@jam.dev/recording-links": "^0.3.1",
     "electron-is-dev": "^3.0.1"
   },
   "devDependencies": {

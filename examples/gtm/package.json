@@ -1,0 +1,13 @@
+{
+  "name": "example-gtm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5181",
+    "build": "vite build",
+    "start": "vite preview --port 5181"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}
