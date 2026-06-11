@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jam Recording Links — Google Tag Manager example</title>
+
+    <!-- Google Tag Manager — replace GTM-XXXXXXX with your container ID. -->
+    <!-- The Jam snippet is NOT in this page's source: it's delivered by a -->
+    <!-- Custom HTML tag in your GTM container. See this example's README. -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-XXXXXXX");
+    </script>
+    <!-- End Google Tag Manager -->
+  </head>
+  <body>
+    <main>
+      <h1>Jam Recording Links — Google Tag Manager example</h1>
+      <p>
+        This page loads Recording Links through a GTM Custom HTML tag instead
+        of inline script tags. Follow the README to set up the tag in your
+        container, then open this page through a Recording Link and use the
+        buttons below to generate activity you can check for in the resulting
+        jam.
+      </p>
+      <button id="log">Log to console</button>
+      <button id="error">Throw an error</button>
+      <button id="fetch">Make a network request</button>
+      <p id="status"></p>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

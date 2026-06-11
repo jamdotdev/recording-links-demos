@@ -1,0 +1,13 @@
+{
+  "name": "example-html",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5180",
+    "build": "vite build",
+    "start": "vite preview --port 5180"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}
