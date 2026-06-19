@@ -9,7 +9,9 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
+    // Type-check dependency declarations (incl. @jam.dev/recording-links) so a
+    // broken SDK .d.ts surfaces here in CI instead of in a customer's build.
+    "skipLibCheck": false,
     "isolatedModules": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
